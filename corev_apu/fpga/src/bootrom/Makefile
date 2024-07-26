@@ -1,6 +1,10 @@
 XLEN ?= 64
 CROSSCOMPILE ?= riscv-none-elf-
 
+# Ethernet defaults to OpenRISC
+HAS_ETHERNET_OPENRISC ?= 1
+HAS_ETHERNET_XLNX ?= 0
+
 ifeq ($(BOARD), nexys_video)
 DRAM_SIZE_64 ?= 0x20000000 #512MB
 DRAM_SIZE_32 ?= 0x08000000 #128MB
@@ -45,8 +49,23 @@ MAIN_SV = $(MAIN:.elf=.sv)
 
 DTB = cv$(XLEN)a6.dtb
 
+# OpenRISC is default
+ifeq ($(HAS_ETHERNET_XLNX), 1)
+	HAS_ETHERNET_OPENRISC := 0
+endif
+
+
+ifeq ($(HAS_ETHERNET_OPENRISC), 1)
+	HAS_ETHERNET_XLNX := 0
+endif
+
 ifeq ($(HAS_ETHERNET), 1)
-SED_DELETE_OPT = -e "/DELETE_ETH/d"
+ifeq ($(HAS_ETHERNET_OPENRISC), 1)
+	SED_DELETE_OPT = -e "/DELETE_ETH_LOWRISC/d"
+endif
+ifeq ($(HAS_ETHERNET_XLNX), 1)
+	SED_DELETE_OPT = -e "/DELETE_ETH_XLNX/d"
+endif
 else
 SED_DELETE_OPT =
 endif

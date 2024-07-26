@@ -151,6 +151,8 @@ package build_config_pkg;
     cfg.InstrTlbEntries = CVA6Cfg.InstrTlbEntries;
     cfg.DataTlbEntries = CVA6Cfg.DataTlbEntries;
 
+    cfg.AllowSModeAccessDCache = CVA6Cfg.AllowSModeAccessDCache;
+    
     return cfg;
   endfunction
 

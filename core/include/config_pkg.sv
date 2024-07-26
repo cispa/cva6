@@ -84,6 +84,8 @@ package config_pkg;
     bit                          RVU;
     // Debug support
     bit                          DebugEn;
+    // allow access to data cache control in S-Mode and HS-Mode ?
+    bit                          AllowSModeAccessDCache;
     // Base address of the debug module
     logic [63:0]                 DmBaseAddress;
     // Address to jump when halt request
@@ -244,6 +246,8 @@ package config_pkg;
     bit          MmuPresent;
     bit          RVS;                //Supervisor mode
     bit          RVU;                //User mode
+
+    bit          AllowSModeAccessDCache;
 
     logic [63:0] HaltAddress;
     logic [63:0] ExceptionAddress;

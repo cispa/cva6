@@ -2115,6 +2115,9 @@ module csr_regfile
         end
       end
     end
+    if (CVA6Cfg.AllowSModeAccessDCache && csr_addr_i == riscv::CSR_DCACHE && (priv_lvl_o == riscv::PRIV_LVL_S || priv_lvl_o == riscv::PRIV_LVL_HS)) begin
+      privilege_violation = 1'b0;
+    end
   end
   // ----------------------
   // CSR Exception Control

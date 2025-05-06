@@ -195,7 +195,7 @@ COMMON_PLUS_ARGS = \
         $(spike-yaml-plusarg) \
 	+tohost_addr=$(shell $$RISCV/bin/$(CV_SW_PREFIX)nm -B $(elf) | grep -w tohost | cut -d' ' -f1) \
 	+signature=$(elf).signature_output +UVM_TESTNAME=uvmt_cva6_firmware_test_c \
-	+report_file=$(log).yaml +core_name=$(target)
+	+report_file=$(log).yaml +core_name=$(target) $(if $(max_cycles), +time_out=$(max_cycles))
 
 ifneq ($(UVM_VERBOSITY),)
 COMMON_PLUS_ARGS += +UVM_VERBOSITY=$(UVM_VERBOSITY)

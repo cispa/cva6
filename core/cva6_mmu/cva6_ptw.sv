@@ -109,6 +109,7 @@ module cva6_ptw
     WAIT_RVALID,
     PROPAGATE_ERROR,
     PROPAGATE_ACCESS_ERROR,
+    KILL_REQ,
     LATENCY
   }
       state_q, state_d;
@@ -392,14 +393,14 @@ module cva6_ptw
         end
       end
 
-      WAIT_GRANT: begin
+      WAIT_GRANT, KILL_REQ: begin
         // send a request out
         req_port_o.data_req = 1'b1;
         // wait for the WAIT_GRANT
         if (req_port_i.data_gnt) begin
           // send the tag valid signal one cycle later
           tag_valid_n = 1'b1;
-          state_d     = PTE_LOOKUP;
+          state_d     = (state_q == KILL_REQ) ? WAIT_RVALID : PTE_LOOKUP;
         end
       end
 
@@ -629,6 +630,16 @@ module cva6_ptw
       if (((state_q inside {PTE_LOOKUP, WAIT_RVALID}) && !data_rvalid_q) || ((state_q == WAIT_GRANT) && req_port_i.data_gnt))
         state_d = WAIT_RVALID;
       else state_d = LATENCY;
+
+      if(state_q == WAIT_GRANT && CVA6Cfg.DCacheType inside {
+         config_pkg::HPDCACHE_WT,
+         config_pkg::HPDCACHE_WB,
+         config_pkg::HPDCACHE_WT_WB})
+      begin
+        // need to finish request / wait for grant and rvalid so we can get correct data next time
+        state_d = KILL_REQ;
+      end
+
     end
   end
 

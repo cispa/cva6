@@ -6,7 +6,7 @@
 // or agreed to in writing, software, hardware and materials distributed under
 // this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
+// specific language governi permissions and limitations under the License.
 
 // Xilinx Peripherals
 
@@ -22,8 +22,9 @@ module ariane_peripherals #(
     parameter bit InclSPI      = 0,
     parameter bit InclEthernet = 0,
     parameter bit InclGPIO     = 0,
-    parameter bit InclTimer    = 1
-) (
+    parameter bit InclTimer    = 1,
+    parameter int ExtraIrqs    = 1
+)(
     input  logic       clk_i           , // Clock
     input  logic       clk_200MHz_i    ,
     input  logic       rst_ni          , // Asynchronous reset active low
@@ -33,6 +34,8 @@ module ariane_peripherals #(
     AXI_BUS.Slave      gpio            ,
     AXI_BUS.Slave      ethernet        ,
     AXI_BUS.Slave      timer           ,
+    input logic [ExtraIrqs - 1 : 0] irq_i,
+    input logic [ExtraIrqs - 1 : 0] irq_levels_i,
     output logic [1:0] irq_o           ,
     // UART
     input  logic       rx_i            ,
@@ -65,9 +68,24 @@ module ariane_peripherals #(
     // 1. PLIC
     // ---------------
     logic [ariane_soc::NumSources-1:0] irq_sources;
+    logic [ariane_soc::NumSources-1:0] irq_level_edge_triggered;
 
     // Unused interrupt sources
-    assign irq_sources[ariane_soc::NumSources-1:7] = '0;
+    assign irq_sources[ariane_soc::NumSources-1:7 + ExtraIrqs] = '0;
+    assign irq_sources[7+ExtraIrqs-1:7] = irq_i;
+
+    assign irq_level_edge_triggered[ariane_soc::NumSources-1:7 + ExtraIrqs] = '0;
+    // peripherals in this file are ALWAYS level triggered
+    assign irq_level_edge_triggered[7:0] = '0;
+    assign irq_level_edge_triggered[7+ExtraIrqs-1:7] = irq_levels_i;
+
+
+    generate
+        if(ariane_soc::NumSources < ExtraIrqs + 7)
+        begin
+            $error("Too many IRQ sources!");
+        end
+    endgenerate
 
     REG_BUS #(
         .ADDR_WIDTH ( 32 ),
@@ -181,11 +199,11 @@ module ariane_peripherals #(
     ) i_plic (
       .clk_i,
       .rst_ni,
-      .req_i         ( plic_req    ),
-      .resp_o        ( plic_rsp    ),
-      .le_i          ( '0          ), // 0:level 1:edge
-      .irq_sources_i ( irq_sources ),
-      .eip_targets_o ( irq_o       )
+      .req_i         ( plic_req                 ),
+      .resp_o        ( plic_rsp                 ),
+      .le_i          ( irq_level_edge_triggered ), // 0:level 1:edge
+      .irq_sources_i ( irq_sources              ),
+      .eip_targets_o ( irq_o                    )
     );
 
     // ---------------

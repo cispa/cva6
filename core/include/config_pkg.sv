@@ -192,9 +192,26 @@ package config_pkg;
     int unsigned                 DcacheSetAssoc;
     // Data cache line width
     int unsigned                 DcacheLineWidth;
-    // Data cache flush on fence
+    // three configurations for cache coherency after flush:
+    // DcacheFlushOnFence causes dcache flush for every fence instruction
+    // DcacheFlushOnFenceI causes dcache flush for every fence.I instruction
+    // DcacheInvalidateOnFlush causes dcache to also be invalidated when flushed
+    // tradeoff between coherence and efficiency, depending on remaining configuration:
+    
+    // DcacheFlushOnFenceI is required for write-back caches - otherwise, 
+    // no way to reliably write instruction memory with store instructions, 
+    // as data and instruction cache are currently not coherent
+    // DcacheFlushOnFence is required for write-back caches to ensure coherency
+    // with other harts or DMA devices --> a fence forces all stores to commit to memory
+    // DcacheInvalidateOnFlush causes all dcache entries to become invalid, forcing the CPU
+    // to fetch data from memory after each fence --> make writes from other harts or DMAs
+    // visible to the CPU
+    // thus, DcacheFlushOnFence and DcacheInvalidateOnFlush can ensure DMA coherency at high performance cost
+    // using RVZiCbom can achieve the same effect at significantly lower performance cost
+    // hence, on uniprocessor or not cache-coherent multiprocessor SoCs, one might want to disable both and use
+    // explicit CBO operations for better overall performance
     bit                          DcacheFlushOnFence;
-    // Data cache invalidate on flush
+    bit                          DcacheFlushOnFenceI;
     bit                          DcacheInvalidateOnFlush;
     // User field on data bus enable
     int unsigned                 DataUserEn;
@@ -385,6 +402,7 @@ package config_pkg;
     int unsigned DCACHE_MAX_TX;
 
     bit DcacheFlushOnFence;
+    bit DcacheFlushOnFenceI;
     bit DcacheInvalidateOnFlush;
 
     int unsigned DATA_USER_EN;
